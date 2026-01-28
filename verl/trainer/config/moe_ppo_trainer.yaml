@@ -1,0 +1,89 @@
+# Copyright 2025 MoE-Agent Research
+#
+# MoE-PPO Training Configuration
+
+# Extend from base PPO config
+ppo_mini_batch_size: 128
+ppo_micro_batch_size_per_gpu: 4
+ppo_epochs: 4
+clip_ratio: 0.2
+clip_ratio_low: null  # Use same as clip_ratio
+clip_ratio_high: null  # Use same as clip_ratio
+entropy_coeff: 0.01
+grad_clip: 1.0
+loss_agg_mode: 'mean'
+
+# Value function settings (only if using critic)
+cliprange_value: 0.2
+use_critic: true  # Set to false for GRPO-style critic-free training
+
+# MoE-specific settings
+moe:
+  # Expert configuration
+  num_experts: 4
+  top_k: 2  # Number of experts activated per state
+  
+  # Critic mode: 'shared' or 'per_expert'
+  critic_mode: 'shared'
+  
+  # Expert specialization mechanism
+  # Options: 'wta' (winner-take-all), 'load_balance', 'gradient_compete', 'all', 'none'
+  specialization_mode: 'wta'
+  
+  # Winner-Take-All settings
+  use_winner_take_all: true
+  use_routing_weights_in_wta: false  # Whether to weight Q-values by routing probs
+  
+  # Load balancing settings
+  load_balance_weight: 0.01
+  load_balance_capacity_factor: 1.5  # Capacity = avg_samples * factor
+  
+  # Gradient competition settings
+  competition_weight: 0.05
+  use_simple_competition: true  # Use simplified gate-based competition
+  
+  # Router settings
+  router_noise_std: 0.1  # Exploration noise during training
+  state_pooling: 'mean'  # 'mean', 'last', or 'first'
+  use_softmax_gate: true
+  
+  # Expert initialization
+  share_base_layers: true  # Share transformer layers, only different heads
+  init_experts_differently: true  # Use different random seeds for experts
+
+# Model settings
+model:
+  type: 'MoE'  # 'MoE' or 'Standard'
+  base_model_path: 'Qwen/Qwen2.5-1.5B-Instruct'
+  use_remove_padding: false
+  use_fused_kernels: false
+
+# Training dynamics
+temperature: 1.0
+use_dynamic_bsz: false
+use_kl_loss: false
+kl_loss_coef: 0.1
+kl_loss_type: 'kl'  # 'kl' or 'abs'
+
+# Optimizer settings
+actor_lr: 1e-6
+critic_lr: 5e-6
+adam_eps: 1e-8
+weight_decay: 0.0
+
+# Logging and monitoring
+log_interval: 10
+save_interval: 100
+eval_interval: 50
+
+# Expert monitoring
+monitor_expert_specialization: true
+log_expert_gradients: false  # Warning: expensive
+log_expert_outputs: false  # Log sample outputs from each expert
+
+# Experimental features
+ablation:
+  disable_load_balancing: false
+  disable_competition: false
+  disable_winner_take_all: false
+  use_uniform_routing: false  # For baseline comparison

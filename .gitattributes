@@ -1,0 +1,2 @@
+src/environments/env_package/webshop/webshop/data/items_shuffle.json filter=lfs diff=lfs merge=lfs -text
+src/environments/env_package/webshop/webshop/data/items_ins_v2.json filter=lfs diff=lfs merge=lfs -text
