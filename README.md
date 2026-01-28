@@ -11,71 +11,8 @@ PA-MoE is a novel architecture for multi-turn reinforcement learning that addres
 - **Phase-Aware Expert Routing**: Dynamically routes different task phases to specialized expert networks
 - **Hierarchical Value Estimation**: Two-level critic architecture (global + phase-specific)
 - **Parameter Efficiency**: LoRA-based expert adaptation for efficient scaling
-- **Multi-Environment Support**: Tested on ALFWorld and WebShop benchmarks
+- **Multi-Environment Support**: Evaluated on interactive decision-making benchmarks
 - **Scalable Architecture**: Supports both 1.5B and 7B parameter models
-
-## Installation
-
-### Prerequisites
-
-- Python 3.8+
-- CUDA 11.7+ (for GPU support)
-- Git LFS (for large data files)
-
-### Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/YsTvT/PA-MoE.git
-cd PA-MoE
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-python setup.py develop
-```
-
-3. Install Git LFS (if not already installed):
-```bash
-git lfs install
-git lfs pull
-```
-
-### Environment-Specific Setup
-
-#### WebShop Environment
-```bash
-cd src/environments/env_package/webshop/webshop
-bash setup.sh
-cd ../../../../..
-```
-
-## Quick Start
-
-### Training on ALFWorld
-
-**1.5B Model:**
-```bash
-bash scripts/train/train_alfworld_gigpo_moe.sh
-```
-
-**7B Model:**
-```bash
-bash scripts/train/train_alfworld_7b.sh
-```
-
-### Training on WebShop
-
-**1.5B Model:**
-```bash
-bash scripts/train/train_webshop_gigpo_moe.sh
-```
-
-**7B Model:**
-```bash
-bash scripts/train/train_webshop_7b.sh
-```
 
 ## Repository Structure
 
@@ -88,21 +25,14 @@ PA-MoE/
 │   │   ├── cognitive_experts.py  # Specialized experts
 │   │   └── hierarchical_critic.py # Hierarchical value network
 │   ├── environments/             # Environment implementations
-│   │   ├── env_package/
-│   │   │   ├── alfworld/         # ALFWorld environment
-│   │   │   └── webshop/          # WebShop environment
-│   │   └── prompts/              # Task prompts
 │   ├── agent/                    # Agent components
 │   ├── trainer/                  # Training infrastructure
 │   ├── memory/                   # Memory management
-│   ├── multi_turn_rollout/       # Rollout utilities
 │   └── reward_manager/           # Reward computation
-├── training/                     # Training scripts
-├── scripts/train/                # Experiment scripts
-├── configs/                      # Configuration files
-├── verl/                         # Core training framework
-└── examples/                     # Example scripts
-
+├── training/                     # Training entry points
+├── scripts/train/                # Training configurations
+├── configs/                      # Model and algorithm configurations
+└── verl/                         # Distributed training framework
 ```
 
 ## Architecture
@@ -112,110 +42,109 @@ PA-MoE/
 Our architecture consists of three main components:
 
 1. **Phase Router**: Detects the current task phase using trajectory features
-   - Input: Recent observations and actions
-   - Output: Phase distribution (Explore/Interact/Navigate/Recover)
+   - Input: Recent observations and action history
+   - Output: Phase distribution over specialized experts
 
-2. **Cognitive Experts**: 4 specialized policy networks with LoRA adaptation
-   - Expert 1: Exploration and search
-   - Expert 2: Interaction and manipulation
-   - Expert 3: Navigation and planning
-   - Expert 4: Error recovery
+2. **Cognitive Experts**: Multiple specialized policy networks with LoRA adaptation
+   - Expert specialization emerges through phase-aware routing
+   - Efficient parameter scaling via low-rank adaptation
 
-3. **Hierarchical Critic**: Two-level value estimation
-   - Global critic: Overall task value
-   - Phase-specific critics: Phase-conditional values
+3. **Hierarchical Critic**: Multi-level value estimation
+   - Global task-level value estimation
+   - Phase-specific value functions for fine-grained credit assignment
 
-### Training Pipeline
+### Training
 
-1. **Stage 1 (Optional)**: Router pre-training on labeled episodes
-2. **Stage 2**: Expert differentiation with phase alignment
-3. **Stage 3**: End-to-end optimization with GiGPO algorithm
+The training process involves multiple stages with different optimization objectives. Key algorithmic components include phase alignment regularization, expert differentiation, and hierarchical value bootstrapping. The implementation leverages distributed training infrastructure for scaling to large language models.
 
 ## Configuration
 
-Key hyperparameters can be modified in `configs/moe_ppo_trainer.yaml`:
+Model and training configurations are managed through YAML files in the `configs/` directory. Key parameters include:
 
-```yaml
-model:
-  use_moe: true
-  use_phase_moe: true
-  phase_moe:
-    num_experts: 4              # Number of experts
-    lora_rank: 32               # LoRA rank for adaptation
-    router_checkpoint: null     # Pre-trained router (optional)
+- Expert network architecture and routing mechanisms
+- LoRA adaptation settings for parameter efficiency
+- Optimization hyperparameters and learning schedules
+- Environment-specific reward shaping and termination conditions
 
-algorithm:
-  adv_estimator: gigpo          # Advantage estimation method
-  gamma: 0.95                   # Discount factor
-
-data:
-  train_batch_size: 256
-  val_batch_size: 64
-```
+Refer to the configuration files for detailed parameter specifications.
 
 ## Environments
 
-### ALFWorld
+### Interactive Decision-Making Benchmarks
 
-A text-based environment for household tasks requiring multi-step planning and execution.
+The framework has been evaluated on multiple multi-turn environments requiring:
+- Long-horizon planning and execution
+- Dynamic interaction with complex state spaces
+- Error recovery and adaptive behavior
+- Multi-phase task decomposition
 
-- **Task Types**: 6 categories (Pick & Place, Clean, Heat, Cool, Examine, Pick Two)
-- **Phases**: Explore → Interact → Navigate → Recover
-- **Metrics**: Success rate, average steps
+Environment-specific configurations and data preprocessing scripts are provided in the `examples/` directory.
 
-### WebShop
+## Experimental Setup
 
-An e-commerce simulation requiring product search and selection.
+### Model Training
 
-- **Task Types**: Product search with attribute matching
-- **Phases**: Search → Filter → Select → Verify
-- **Metrics**: Task score, success rate
+Training scripts are provided in `scripts/train/` for different model sizes and environment configurations. Each script specifies:
+- Distributed training topology
+- Model parallelization strategy
+- Data collection and replay configuration
+- Evaluation and checkpointing schedules
 
-## GPU Requirements
+Users should configure resource allocation, data paths, and distributed training parameters according to their infrastructure setup before execution.
 
-| Model Size | GPUs | Memory per GPU | Training Time |
-|------------|------|----------------|---------------|
-| 1.5B       | 2    | ~24GB          | ~12 hours     |
-| 7B         | 4    | ~40GB          | ~24 hours     |
+### Resource Requirements
 
-## Expected Results
+Training large-scale MoE models requires:
+- Multi-GPU distributed training infrastructure
+- Sufficient VRAM for model parameters and activation memory
+- High-bandwidth interconnect for efficient gradient synchronization
+- Storage for trajectory buffers and model checkpoints
 
-### ALFWorld (Seen Tasks)
+Specific requirements vary based on model size, batch configuration, and training parallelism.
 
-| Method | Success Rate |
-|--------|--------------|
-| Baseline | 85.2% |
-| PA-MoE (1.5B) | 93.8% |
-| PA-MoE (7B) | 95.1% |
+## Expected Performance
 
-### WebShop
+Our approach demonstrates improvements in multi-turn task completion across different environments:
 
-| Method | Average Score |
-|--------|---------------|
-| Baseline | 62.5 |
-| PA-MoE (1.5B) | 71.3 |
-| PA-MoE (7B) | 73.8 |
+- Enhanced success rates on complex multi-step tasks
+- Improved sample efficiency during training
+- Better generalization to unseen task variations
+- Reduced parameter imbalance metrics
 
-## Troubleshooting
+Detailed experimental results and analysis are provided in the accompanying paper.
 
-### Out of Memory
-- Reduce batch size: `data.train_batch_size=128`
-- Enable gradient checkpointing: `model.enable_gradient_checkpointing=true`
-- Reduce LoRA rank: `model.phase_moe.lora_rank=16`
+## Technical Details
 
-### WebShop Setup Issues
-Ensure Java is installed for PyLucene:
-```bash
-java -version
-sudo apt-get install default-jdk  # if needed
-```
+### Phase Detection
 
-### Import Errors
-Ensure repository is installed in development mode:
-```bash
-python setup.py develop
-export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-```
+The phase router uses a combination of:
+- Trajectory-based feature extraction
+- Attention mechanisms over action-observation sequences
+- Learned phase embeddings and transition dynamics
+
+### Expert Differentiation
+
+Expert specialization is achieved through:
+- Phase-conditioned policy optimization
+- Auxiliary losses for expert utilization balance
+- Regularization techniques to prevent expert collapse
+
+### Value Estimation
+
+The hierarchical critic provides:
+- Multi-timescale value predictions
+- Phase-aware advantage estimation
+- Improved credit assignment for long-horizon tasks
+
+## Implementation Notes
+
+The codebase builds upon existing reinforcement learning frameworks and distributed training libraries. Key dependencies include:
+- Transformer-based language models as policy backbones
+- Distributed training infrastructure for model parallelism
+- Environment wrappers for standardized interaction interfaces
+- Data management utilities for trajectory collection and replay
+
+Detailed dependency specifications are available in `requirements.txt` and `setup.py`.
 
 ## Citation
 
@@ -232,18 +161,8 @@ If you use this code in your research, please cite:
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built on the VERL framework
-- ALFWorld environment from [alfworld](https://github.com/alfworld/alfworld)
-- WebShop environment from [webshop](https://github.com/princeton-nlp/WebShop)
-
-## Contact
-
-For questions and discussions, please open an issue in this repository.
+This project is licensed under the Apache License 2.0.
 
 ---
 
-**Note**: This is an anonymous submission. Full author information and affiliations will be added upon acceptance.
+**Note**: This is an anonymous submission for conference review. Additional documentation and detailed usage instructions will be provided upon acceptance.
