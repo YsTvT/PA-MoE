@@ -17,16 +17,6 @@ Training scripts are provided in `scripts/train/` for different environments and
 - `train_webshop_gigpo_moe.sh` - WebShop environment with 1.5B model
 - `train_webshop_7b.sh` - WebShop environment with 7B model
 
-## Citation
-
-```bibtex
-@inproceedings{pamoe2025,
-  title={Phase-Aware Mixture of Experts for Agentic Reinforcement Learning},
-  author={Anonymous},
-  booktitle={Under Review},
-  year={2025}
-}
-```
 
 ---
 
