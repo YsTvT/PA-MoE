@@ -10,9 +10,9 @@ export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 ENGINE=vllm
 export VLLM_ATTENTION_BACKEND=XFORMERS
 
-train_data_size=16  # 保持16
+train_data_size=16  
 val_data_size=128
-group_size=8  # 保持8 (不增大)
+group_size=8  
 
 python3 -m examples.data_preprocess.prepare \
     --mode 'text' \
