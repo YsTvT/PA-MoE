@@ -12,11 +12,6 @@ def wrap_as_phase_moe(
     num_experts: int = 4,
 ) -> nn.Module:
     
-    print(f"\n🔄 包装为Phase-Aware MoE...")
-    print(f"  Experts: {num_experts}")
-    print(f"  LoRA rank: {lora_rank}")
-    print(f"  Router checkpoint: {router_checkpoint}")
-    
     from peft import LoraConfig, get_peft_model
     from verl.moe.phase_router import PhaseAwareRouter
     
@@ -27,13 +22,11 @@ def wrap_as_phase_moe(
     )
     
     if router_checkpoint and os.path.exists(router_checkpoint):
-        print(f"  加载预训练router: {router_checkpoint}")
         try:
             router_state = torch.load(router_checkpoint, map_location='cpu')
             router.load_state_dict(router_state, strict=False)
-            print(f"  ✓ Router加载成功")
         except Exception as e:
-            print(f"  ⚠ Router加载失败: {e}, 使用随机初始化")
+            pass
     
     lora_config = LoraConfig(
         r=lora_rank,
@@ -56,9 +49,6 @@ def wrap_as_phase_moe(
             return self.model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
     
     moe_model = SimplePhaseMoE(model_with_lora, router, num_experts)
-    
-    print(f"✓ Phase-Aware MoE包装完成 (简化版，单expert)")
-    print(f"  内存开销: 仅增加LoRA参数 (~{lora_rank * 7 * hidden_size * 2 / 1e6:.1f}M)")
     
     return moe_model
 

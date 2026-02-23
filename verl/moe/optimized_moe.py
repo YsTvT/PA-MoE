@@ -376,7 +376,6 @@ class OptimizedTrainer:
             stage = 2
         
         if stage != self.current_stage:
-            print(f"\n切换到 Stage {stage+1}: {self.stage_config[f'stage{stage+1}']['name']}")
             self.moe_actor.set_training_stage(stage)
             self.current_stage = stage
         
@@ -461,8 +460,6 @@ def create_optimized_moe(
     
     from transformers import AutoModelForCausalLM
     
-    print(f"创建优化MoE: {model_name}, {num_experts}专家")
-    
     base_model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype=torch.bfloat16,
@@ -489,17 +486,5 @@ def create_optimized_moe(
         num_experts=num_experts,
         hidden_dim=base_model.config.hidden_size,
     )
-    
-    actor_params = sum(p.numel() for p in moe_actor.parameters())
-    critic_params = sum(p.numel() for p in critic.parameters())
-    
-    print(f"\n优化MoE统计:")
-    print(f"  Actor总参数: {actor_params/1e6:.1f}M")
-    print(f"  Critic总参数: {critic_params/1e6:.1f}M")
-    print(f"  专家数量: {num_experts}")
-    print(f"  训练策略: 3-stage curriculum")
-    print(f"    Stage 1: Router pre-train (20 epochs)")
-    print(f"    Stage 2: Expert warm-up (50 epochs)")
-    print(f"    Stage 3: Joint training (130 epochs)")
     
     return moe_actor.to(device), critic.to(device)

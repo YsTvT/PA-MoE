@@ -25,11 +25,6 @@ class K0Configuration(nn.Module):
         
         self.device = device
         
-        print(f"\n{'='*60}")
-        print(f"K=0 Configuration (Router-only, No Expert Specialization)")
-        print(f"{'='*60}")
-        
-        print(f"\n[1/2] Loading base model: {base_model_path}")
         self.base_model = AutoModelForCausalLM.from_pretrained(
             base_model_path,
             torch_dtype=torch.bfloat16,
@@ -37,9 +32,7 @@ class K0Configuration(nn.Module):
             device_map=device if torch.cuda.is_available() else "cpu",
         )
         hidden_dim = self.base_model.config.hidden_size
-        print(f"✓ Base model loaded (hidden_dim={hidden_dim})")
         
-        print(f"\n[2/2] Creating Phase-Aware Router")
         self.router = PaperCompliantPhaseRouter(
             hidden_dim=hidden_dim,
             num_experts=4,
@@ -49,16 +42,8 @@ class K0Configuration(nn.Module):
             anneal_steps=anneal_steps,
             lambda_s=lambda_s,
         )
-        print(f"✓ Router created (predicts 4 phases)")
-        print(f"  ⚠️  But all phases use the SAME base model")
-        print(f"     (no expert specialn        
-        self.reset_trajectory_buffer()
         
-        print(f"\n{'='*60}")
-        print(f"K=0 Configuration Ready")
-        print(f"Total parameters: {sum(p.numel() for p in self.parameters()):,}")
-        print(f"(Router: {sum(p.numel() for p in self.router.parameters()):,})")
-        print(f"{'='*60}\n")
+        self.reset_trajectory_buffer()
     
     def reset_trajectory_buffer(self):
         
@@ -167,15 +152,11 @@ def create_k0_configuration(
     )
 
 if __name__ == "__main__":
-    print("K=0 Ablation Test")
-    print("=" * 80)
-    
     k0_model = create_k0_configuration(
         model_path="Qwen/Qwen2.5-1.5B-Instruct",
-        device="cpu",  # 测试用
+        device="cpu",
     )
     
-    print("\n模拟forward pass...")
     k0_model.train()
     k0_model.reset_trajectory_buffer()
     
@@ -193,26 +174,5 @@ if __name__ == "__main__":
         return_routing_info=True,
     )
     
-    print(f"\nOutput shape: {output.logits.shape}")
-    print(f"Router predicted phases: {routing_info['expert_ids']}")
-    print(f"⚠️  Note: {routing_info['note']}")
-    print(f"Temperature: {routing_info['temperature']:.3f}")
-    
-    print("\n计算routing losses...")
     trajectory_return = torch.tensor(5.0)
     losses = k0_model.compute_routing_losses(trajectory_return)
-    
-    print("\nLosses:")
-    for name, loss in losses.items():
-        print(f"  {name}: {loss.item():.6f}")
-    
-    print("\n" + "=" * 80)
-    print("K=0测试完成!")
-    print("\nK=0 vs other configurations:")
-    print("  GiGPO (baseline): No router, no experts → 86.1%")
-    print("  K=0: Router only, no experts → 88.3% (+2.2%)")
-    print("  K=4: Router + 4 experts → 93.8% (+5.5% over K=0)")
-    print("\n这证明了:")
-    print("  1. Router本身提供+2.2%的改进 (phase-aware inductive bias)")
-    print("  2. Expert specialization提供+5.5%的改进 (capacity allocation)")
-    print("  3. 两者是complementary的 (总共+7.7%)")

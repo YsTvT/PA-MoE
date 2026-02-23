@@ -79,11 +79,6 @@ class PaperCompliantExpertMixture(nn.Module):
             )
             for i in range(num_experts)
         ])
-        
-        print(f"\n✓ Created {num_experts} LoRA experts (rank={lora_rank})")
-        for expert in self.experts:
-            info = expert.get_info()
-            print(f"  Expert {info['expert_id']}: {info['param_overhead']} overhead")
     
     def forward_single_expert(
         self,
@@ -195,61 +190,36 @@ def compute_balance_loss(
     return loss * lambda_bal
 
 if __name__ == "__main__":
-    print("Paper-Compliant LoRA Experts Test")
-    print("=" * 60)
-    
     from transformers import AutoModelForCausalLM
     
-    print("\n加载base model (Qwen2.5-1.5B)...")
     base_model = AutoModelForCausalLM.from_pretrained(
         "Qwen/Qwen2.5-1.5B-Instruct",
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,
-        device_map="cpu",  # 测试用CPU
+        device_map="cpu",
     )
     
-    print("\n创建Expert Mixture...")
     expert_mixture = PaperCompliantExpertMixture(
         base_model=base_model,
         num_experts=4,
         lora_rank=32,
     )
     
-    print("\n测试单个expert forward...")
     input_ids = torch.randint(0, 1000, (2, 10))
     output = expert_mixture.forward_single_expert(
         expert_id=0,
         input_ids=input_ids,
     )
-    print(f"✓ Expert 0 output shape: {output.logits.shape}")
     
-    print("\n测试routing forward...")
     expert_ids = torch.tensor([0, 1, 2, 3, 0, 1])
     input_ids = torch.randint(0, 1000, (6, 10))
     output = expert_mixture.forward_with_routing(
         expert_ids=expert_ids,
         input_ids=input_ids,
     )
-    print(f"✓ Routed output shape: {output.logits.shape}")
     
-    print("\n测试diversity loss...")
     expert_outputs = [torch.randn(4, 10, 1000) for _ in range(4)]
     phase_probs = F.softmax(torch.randn(4, 4), dim=-1)
     div_loss = compute_diversity_loss(expert_outputs, phase_probs, tau_div=0.1, lambda_div=0.01)
-    print(f"✓ Diversity loss: {div_loss.item():.6f}")
-    print(f"  (τ_div=0.1, λ_div=0.01 per paper)")
     
-    print("\n测试balance loss...")
     bal_loss = compute_balance_loss(phase_probs, lambda_bal=0.001)
-    print(f"✓ Balance loss: {bal_loss.item():.6f}")
-    print(f"  (λ_bal=0.001 per paper)")
-    
-    print("\n" + "=" * 60)
-    print("All tests passed! Experts are paper-compliant.")
-    print("\nKey features:")
-    print("  1. ✓ LoRA rank = 32 (not 16)")
-    print("  2. ✓ Target modules = q/k/v/o_proj (4 modules, not 7)")
-    print("  3. ✓ Diversity loss with τ_div=0.1, λ_div=0.01")
-    print("  4. ✓ Balance loss with λ_bal=0.001")
-    print("  5. ✓ Expert isolation (only selected expert executes)")
-    print("  6. ✓ Frozen base model shared across experts")

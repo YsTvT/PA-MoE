@@ -20,24 +20,24 @@ class CognitiveExpert(nn.Module):
 
         self.expert_profiles = {
             'explore': {
-                'role': '探索未知区域，系统性搜索目标物体',
-                'bias': '系统性遍历、避免重复、优先高概率位置',
+                'role': 'Systematically explore unknown areas and search for target objects',
+                'bias': 'Systematic traversal, avoid repetition, prioritize high-probability locations',
                 'preferred_actions': ['go to', 'open', 'look in', 'examine'],
             },
             'interact': {
-                'role': '物理交互，改变物体状态',
-                'bias': '理解物理因果、正确使用工具、验证操作',
+                'role': 'Physical interaction to change object states',
+                'bias': 'Understand physical causality, use tools correctly, verify operations',
                 'preferred_actions': ['take', 'heat', 'clean', 'cool', 'use'],
             },
             'navigate': {
-                'role': '携带物体到目标位置',
-                'bias': '最短路径、目标匹配、完成判断',
+                'role': 'Carry objects to target location',
+                'bias': 'Shortest path, target matching, completion judgment',
                 'preferred_actions': ['go to', 'put on', 'put in'],
             },
             'recover': {
-                'role': '检测失败，修正策略',
-                'bias': '识别失败原因、回退安全状态、尝试替代',
-                'preferred_actions': ['放下', '重新观察', '换路径'],
+                'role': 'Detect failures and correct strategy',
+                'bias': 'Identify failure causes, retreat to safe state, try alternatives',
+                'preferred_actions': ['put down', 're-observe', 'change path'],
             },
         }
         

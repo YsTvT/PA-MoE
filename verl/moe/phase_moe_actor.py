@@ -80,11 +80,6 @@ def create_phase_aware_moe(
     lora_rank: int = 16,
 ) -> Tuple[PhaseAwareMoEActor, HierarchicalCritic]:
     
-    print(f"创建Phase-Aware MoE...")
-    print(f"  Base model: {model_path}")
-    print(f"  Phases: 4 (Explore, Interact, Navigate, Recover)")
-    print(f"  LoRA rank: {lora_rank}")
-    
     actor = PhaseAwareMoEActor(
         base_model_path=model_path,
         lora_rank=lora_rank,
@@ -107,7 +102,5 @@ def create_phase_aware_moe(
         num_phases=4,
         hidden_dim=actor.hidden_dim,
     )
-    
-    print(f"✓ Phase-Aware MoE创建完成")
     
     return actor, critic

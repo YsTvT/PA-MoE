@@ -345,7 +345,7 @@ model:
     hierarchical_critic: true
     lambda_phase: 0.5
 
-    # 改进配置
+    # Improved configuration
     baseline_checkpoint: null
     init_from_baseline: false
     progressive_training: false

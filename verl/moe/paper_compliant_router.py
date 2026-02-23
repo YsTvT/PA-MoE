@@ -167,14 +167,6 @@ if __name__ == "__main__":
         lambda_s=0.05,
     )
     
-    print("✓ Router initialized with paper parameters:")
-    print(f"  - Temperature: τ_0={router.tau_0.item()}, τ_f={router.tau_f.item()}")
-    print(f"  - Annealing steps: {router.anneal_steps.item()}")
-    print(f"  - Switching penalty: λ_s={router.lambda_s}")
-    print(f"  - LSTM hidden: 256")
-    print(f"  - MLP hidden: 512")
-    print(f"  - Num experts: {router.num_experts}")
-    
     batch_size = 4
     obs_hidden = torch.randn(batch_size, 10, 1536)
     goal_hidden = torch.randn(batch_size, 5, 1536)
@@ -182,46 +174,21 @@ if __name__ == "__main__":
     
     phase_probs, phase_logits, phase_modes = router(obs_hidden, goal_hidden, history_hidden)
     
-    print("\n✓ Forward pass successful:")
-    print(f"  - Phase probs shape: {phase_probs.shape}")
-    print(f"  - Phase probs sum to 1: {phase_probs.sum(dim=1)}")
-    print(f"  - Phase modes: {phase_modes}")
-    
     router.train()
     expert_ids_train, log_probs_train = router.select_expert(phase_probs, deterministic=False)
-    print("\n✓ Expert selection (training - stochastic):")
-    print(f"  - Selected experts: {expert_ids_train}")
-    print(f"  - Log probs: {log_probs_train}")
     
     router.eval()
     expert_ids_eval, log_probs_eval = router.select_expert(phase_probs, deterministic=True)
-    print("\n✓ Expert selection (inference - deterministic):")
-    print(f"  - Selected experts: {expert_ids_eval}")
     
     T = 20
     phase_modes_seq = torch.randint(0, 4, (T, batch_size))
     switch_loss = router.compute_switching_penalty(phase_modes_seq)
-    print(f"\n✓ Switching penalty computed: {switch_loss.item():.4f}")
     
-    print("\n✓ Temperature annealing:")
     temps = []
     for step in range(5):
         temp = router.update_temperature()
         temps.append(temp)
-        if step % 1 == 0:
-            print(f"  Step {router.current_step.item()}: τ = {temp:.3f}")
     
     log_probs_traj = torch.randn(10)
     traj_return = torch.tensor(5.0)
     router_loss = compute_router_policy_gradient_loss(log_probs_traj, traj_return)
-    print(f"\n✓ Router licy gradient loss: {router_loss.item():.4f}")
-    
-    print("\n" + "=" * 60)
-    print("All tests passed! Router is paper-compliant.")
-    print("\nKey differences from original phase_router.py:")
-    print("  1. ✓ Correct temperatur(not 1.0→0.1)")
-    print("  2. ✓ Switching penalty L_switch implemented")
-    print("  3. ✓ Straight-through estimr for backprop")
-    print("  4. ✓ Router policy gradient function")
-    print("  5. ✓ Stochastic/deterministic ection")
-    print("  6. ✓ LSTM hidden=256, MLP hidden=512 (per paper)")

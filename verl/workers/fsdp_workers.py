@@ -245,7 +245,6 @@ class ActorRolloutRefWorker(Worker):
             
             if use_phase_moe:
                 from verl.moe.phase_moe_wrapper import wrap_as_phase_moe
-                print(f"🔄 Creating Phase-Aware MoE Actor...")
                 
                 router_ckpt = self.config.model.phase_moe.get('router_checkpoint', None)
                 lora_rank = self.config.model.phase_moe.get('lora_rank', 16)
@@ -257,12 +256,9 @@ class ActorRolloutRefWorker(Worker):
                     lora_rank=lora_rank,
                     num_experts=num_experts,
                 )
-                print(f"✓ Phase-Aware MoE集成完成")
             else:
                 from verl.moe.moe_wrapper import create_moe_actor_if_enabled
-                print(f"🔄 Wrapping actor as MoE...")
                 actor_module = create_moe_actor_if_enabled(self.config, actor_module)
-                print(f"✓ MoE integration完成")
         
         torch.distributed.barrier()
 
@@ -847,9 +843,7 @@ class CriticWorker(Worker):
         if self.config.model.get('use_moe', False):
             from verl.moe.moe_wrapper import create_moe_critic_if_enabled
             num_experts = self.config.model.moe.get('num_experts', 4)
-            print(f"🔄 Wrapping critic as Value Decomposition...")
             critic_module = create_moe_critic_if_enabled(config, critic_module, num_experts)
-            print(f"✓ Value Decomposition Critic完成")
         
         if self._is_lora:
             print("Applying LoRA to critic module")

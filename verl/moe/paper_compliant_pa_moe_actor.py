@@ -40,11 +40,6 @@ class PaperCompliantPAMoEActor(nn.Module):
         self.lambda_div = lambda_div
         self.lambda_bal = lambda_bal
         
-        print(f"\n{'='*60}")
-        print(f"Initializing Paper-Compliant PA-MoE Actor")
-        print(f"{'='*60}")
-        
-        print(f"\n[1/3] Loading base model: {base_model_path}")
         base_model = AutoModelForCausalLM.from_pretrained(
             base_model_path,
             torch_dtype=torch.bfloat16,
@@ -52,9 +47,7 @@ class PaperCompliantPAMoEActor(nn.Module):
             device_map=device if torch.cuda.is_available() else "cpu",
         )
         hidden_dim = base_model.config.hidden_size
-        print(f"✓ Base model loaded (hidden_dim={hidden_dim})")
         
-        print(f"\n[2/3] Creating Phase-Aware Router")
         self.router = PaperCompliantPhaseRouter(
             hidden_dim=hidden_dim,
             num_experts=num_experts,
@@ -64,25 +57,14 @@ class PaperCompliantPAMoEActor(nn.Module):
             anneal_steps=anneal_steps,
             lambda_s=lambda_s,
         )
-        print(f"✓ Router created with paper parameters:")
-        print(f"  - Temperature: τ₀={tau_0} → τf={tau_f} over {anneal_steps} steps")
-        print(f"  - Switching penalty: λ_s={lambda_s}")
         
-        print(f"\n[3/3] Creating LoRA Expert Mixture")
         self.experts = PaperCompliantExpertMixture(
             base_model=base_model,
             num_experts=num_experts,
             lora_rank=lora_rank,
         )
-        print(f"✓ Experts created (K={num_experts}, r={lora_rank})")
         
         self.reset_trajectory_buffer()
-        
-        print(f"\n{'='*60}")
-        print(f"PA-MoE Actor Ready")
-        print(f"Total parameters: {sum(p.numel() for p in self.parameters()):,}")
-        print(f"Trainable parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad):,}")
-        print(f"{'='*60}\n")
     
     def reset_trajectory_buffer(self):
         
@@ -215,17 +197,13 @@ def create_paper_compliant_pa_moe(
     )
 
 if __name__ == "__main__":
-    print("Paper-Compliant PA-MoE Actor Test")
-    print("=" * 80)
-    
     actor = create_paper_compliant_pa_moe(
         model_path="Qwen/Qwen2.5-1.5B-Instruct",
         num_experts=4,
         lora_rank=32,
-        device="cpu",  # 测试用CPU
+        device="cpu",
     )
     
-    print("\n模拟一个trajectory...")
     actor.train()
     actor.reset_trajectory_buffer()
     
@@ -245,33 +223,9 @@ if __name__ == "__main__":
             history_hidden=history_hidden,
             return_expert_info=True,
         )
-        
-        if t == 0:
-            print(f"\nStep {t}:")
-            print(f"  Output shape: {output.logits.shape}")
-            print(f"  Selected experts: {expert_info['expert_ids']}")
-            print(f"  Temperature: {expert_info['temperature']:.3f}")
     
-    print("\n计算PA-MoE losses...")
     trajectory_return = torch.tensor(5.0)
     losses = actor.compute_pa_moe_losses(trajectory_return)
     
-    print("\nLosses:")
-    for name, loss in losses.items():
-        print(f"  {name}: {loss.item():.6f}")
-    
-    print("\n更新ure...")
     for step in range(5):
         new_temp = actor.step()
-        if step % 100 == 0:
-     print(f"  Step {actor.router.current_step.item()}: τ = {new_temp:.3f}")
-    
-    print("\n" + "=" * 80)
-    print("Tleted!")
-    print("\n这个实现与原代码的关键区别:")
-    print("  1. ✓ Router实际工作 (不是bypass)")
-    print("  2. ✓ Switching penalty L_switch implemented")
-    print("  3. ✓ Router policy gradient implemented")
-    print("  4. ✓ Expert ion (只有被选中的expert执行)")
-    print("  5. ✓ 所有超参数符合论文 (τ=2.0→0.5, r=32, etc.)")
-    print("  6. ✓ Complete loss computation (router_pg + switching + balance)")

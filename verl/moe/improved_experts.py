@@ -19,11 +19,9 @@ def load_baseline_checkpoint(checkpoint_dir):
                 ckpt_path = os.path.join(actor_dir, sorted(ckpt_files)[-1])
     
     if ckpt_path:
-        print(f"  从Baseline加载: {ckpt_path}")
         state_dict = torch.load(ckpt_path)
         return state_dict
     else:
-        print(f"  警告: 未找到Baseline checkpoint，使用预训练LLM")
         return None
 
 class ImprovedCognitiveExpert(nn.Module):
@@ -43,28 +41,28 @@ class ImprovedCognitiveExpert(nn.Module):
         
         self.expert_profiles = {
             'explore': {
-                'role': '探索搜索目标物体',
+                'role': 'Explore and search for target objects',
                 'actions': ['go to', 'open', 'look in'],
             },
             'heat': {
-                'role': '加热物体',
+                'role': 'Heat objects',
                 'actions': ['heat', 'use microwave'],
             },
             'clean': {
-                'role': '清洁物体',
+                'role': 'Clean objects',
                 'actions': ['clean', 'use sinkbasin'],
             },
             'cool': {
-                'role': '冷却物体',
+                'role': 'Cool objects',
                 'actions': ['cool', 'use fridge'],
             },
             'navigate': {
-                'role': '导航到目标位置',
+                'role': 'Navigate to target location',
                 'actions': ['go to', 'put on', 'put in'],
             },
             'recover': {
-                'role': '错误恢复',
-                'actions': ['重试', '回退'],
+                'role': 'Error recovery',
+                'actions': ['retry', 'fallback'],
             },
         }
         
@@ -73,9 +71,8 @@ class ImprovedCognitiveExpert(nn.Module):
         if baseline_checkpoint is not None:
             try:
                 base_model.load_state_dict(baseline_checkpoint, strict=False)
-                print(f"    Expert {expert_id} ({expert_type}): 从Baseline初始化 ✓")
             except Exception as e:
-                print(f"    Expert {expert_id}: 加载Baseline失败: {e}")
+                pass
         
         lora_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
@@ -125,10 +122,6 @@ class ImprovedCognitiveExpertMixture(nn.Module):
         elif num_experts == 8:
             expert_types = ['explore', 'heat', 'clean', 'cool', 'navigate', 'put', 'take', 'recover']
         
-        print(f"\n创建{num_experts}个Cognitive Experts...")
-        print(f"  LoRA rank: {lora_rank}")
-        print(f"  从Baseline初始化: {baseline_checkpoint is not None}")
-        
         self.experts = nn.ModuleList([
             ImprovedCognitiveExpert(
                 base_model=base_model,
@@ -139,8 +132,6 @@ class ImprovedCognitiveExpertMixture(nn.Module):
             )
             for i in range(num_experts)
         ])
-        
-        print(f"✓ {num_experts}个Expert创建完成")
         
     def forward(self, input_ids, attention_mask=None, phase_probs=None, **kwargs):
         
@@ -188,10 +179,6 @@ def create_improved_phase_moe(
     lora_rank: int = 64,
     baseline_checkpoint_dir: Optional[str] = None,
 ):
-    
-    print(f"创建改进的Phase-Aware MoE...")
-    print(f"  Expert数量: {num_experts}")
-    print(f"  LoRA rank: {lora_rank}")
     
     baseline_ckpt = None
     if baseline_checkpoint_dir:

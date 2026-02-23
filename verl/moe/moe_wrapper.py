@@ -14,8 +14,6 @@ def wrap_actor_as_moe(
     if config is None:
         config = {}
     
-    print(f"\n🔄 包装Actor为MoE ({num_experts}专家)...")
-    
     moe_actor = OptimizedMoEActor(
         base_model=base_actor_model,
         num_experts=num_experts,
@@ -29,10 +27,6 @@ def wrap_actor_as_moe(
     
     moe_actor.config = base_actor_model.config
     
-    print(f"✓ MoE包装完成")
-    print(f"  专家数量: {num_experts}")
-    print(f"  参数overhead: {sum(p.numel() for p in moe_actor.expert_heads.parameters()) / 1e6:.1f}M")
-    
     return moe_actor
 
 def wrap_critic_as_decomposition(
@@ -40,15 +34,12 @@ def wrap_critic_as_decomposition(
     num_experts: int = 4,
 ) -> ValueDecompositionCritic:
     
-    print(f"\n🔄 包装Critic为Value Decomposition...")
-    
     decomp_critic = ValueDecompositionCritic(
         base_critic=base_critic_model,
         num_experts=num_experts,
         hidden_dim=base_critic_model.config.hidden_size,
     )
     
-    print(f"✓ Critic包装完成")
     return decomp_critic
 
 class MoEActorWrapper(nn.Module):

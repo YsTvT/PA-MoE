@@ -268,5 +268,6 @@ if __name__ == "__main__":
     train_pa_moe_gigpo(
         model_path="Qwen/Qwen2.5-1.5B-Instruct",
         num_experts=4,
-        lorn        device="cpu",  # 测试用
+        lora_rank=32,
+        device="cpu",
     )
