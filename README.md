@@ -1,6 +1,5 @@
 # Phase-Aware Mixture of Experts for Agentic Reinforcement Learning
 
-**Anonymous submission for conference review.**
 
 ## Overview
 
