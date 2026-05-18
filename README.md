@@ -19,4 +19,3 @@ Training scripts are provided in `scripts/train/` for different environments and
 
 ---
 
-**Note**: This is an anonymous submission for conference review.
